@@ -1,19 +1,28 @@
-const OpenAI = require('openai');
-const { buildExtractionPrompt } = require('../prompts/extractionPrompt');
+import OpenAI from 'openai';
+import { buildExtractionPrompt } from './extractionPrompt';
+import { ExtractionResult, Transaction, BankStats } from '@/types';
 
-const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-});
+// Initialize OpenAI client
+// Note: This requires OPENAI_API_KEY env var to be set
+const openai = new OpenAI();
+const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
+
+interface RawTransaction {
+    amount: number;
+    type: string;
+    date?: string;
+    description?: string;
+}
+
+interface RawExtractionResult {
+    bank: string;
+    transactions: RawTransaction[];
+}
 
 /**
  * Extract transactions from file content using OpenAI
- * @param {string} fileContent - Parsed text content from file
- * @param {string} fileName - Original file name for context
- * @returns {Promise<Object>} - Extraction result
  */
-async function extractTransactions(fileContent, fileName) {
-    const model = process.env.OPENAI_MODEL || 'gpt-4o-mini';
-
+export async function extractTransactions(fileContent: string, fileName: string): Promise<ExtractionResult> {
     // Truncate content if too long (to manage tokens)
     const maxChars = 15000;
     const truncatedContent = fileContent.length > maxChars
@@ -24,7 +33,7 @@ async function extractTransactions(fileContent, fileName) {
 
     try {
         const response = await openai.chat.completions.create({
-            model: model,
+            model: OPENAI_MODEL,
             messages: [
                 {
                     role: 'system',
@@ -36,6 +45,7 @@ async function extractTransactions(fileContent, fileName) {
                 }
             ],
             temperature: 0.1, // Low temperature for consistent parsing
+            // @ts-ignore - OpenAI node SDK typing might be slightly behind on response_format capabilities
             response_format: { type: 'json_object' },
         });
 
@@ -44,25 +54,28 @@ async function extractTransactions(fileContent, fileName) {
             throw new Error('No response from OpenAI');
         }
 
-        const parsed = JSON.parse(content);
+        const parsed = JSON.parse(content) as RawExtractionResult;
         return processExtractionResult(parsed);
 
     } catch (error) {
         console.error('OpenAI extraction error:', error);
-        throw new Error(`Extraction failed: ${error.message}`);
+        if (error instanceof Error) {
+            throw new Error(`Extraction failed: ${error.message}`);
+        }
+        throw new Error('Extraction failed with an unknown error');
     }
 }
 
 /**
  * Process and validate extraction result, compute summary stats
  */
-function processExtractionResult(rawResult) {
+function processExtractionResult(rawResult: RawExtractionResult): ExtractionResult {
     const bank = rawResult.bank || 'Unknown Bank';
-    const transactions = (rawResult.transactions || []).map((tx, index) => ({
+    const transactions: Transaction[] = (rawResult.transactions || []).map((tx, index) => ({
         no: index + 1,
         bank: bank,
         amount: Math.abs(Number(tx.amount) || 0),
-        type: tx.type === 'Credit' ? 'Credit' : 'Debit',
+        type: (tx.type === 'Credit' || tx.type === 'Debit') ? tx.type as 'Credit' | 'Debit' : 'Debit', // Default to debit if unknown, or handle generic
         date: tx.date || new Date().toISOString().split('T')[0],
         description: tx.description || '',
     }));
@@ -77,7 +90,18 @@ function processExtractionResult(rawResult) {
         .reduce((sum, t) => sum + t.amount, 0);
 
     // Group by bank for bank stats
-    const bankMap = new Map();
+    const bankMap = new Map<string, BankStats>();
+
+    // Initialize with the detected bank
+    if (transactions.length > 0) {
+        bankMap.set(bank, {
+            name: bank,
+            txCount: 0,
+            creditAmount: 0,
+            debitAmount: 0
+        });
+    }
+
     transactions.forEach(t => {
         const existing = bankMap.get(t.bank) || {
             name: t.bank,
@@ -106,5 +130,3 @@ function processExtractionResult(rawResult) {
         transactions,
     };
 }
-
-module.exports = { extractTransactions };

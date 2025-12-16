@@ -1,28 +1,4 @@
-# Mutation Extractor
-
-A modern web application for extracting and analyzing bank mutation data from PDF, CSV, and Excel files using OpenAI GPT models.
-
-## Features
-
-- 📄 **Multi-format Support**: Upload PDF, CSV, or Excel bank statements
-- 🤖 **AI-Powered Extraction**: Uses OpenAI GPT-4o-mini for intelligent transaction parsing
-- 📊 **Interactive Dashboard**: View summary statistics, charts, and filterable transaction tables
-- 💾 **Export Functionality**: Download extracted data as CSV
-- 🎨 **Modern UI**: Clean, elegant design optimized for financial data
-
-## Tech Stack
-
-### Frontend
-- Next.js 16 (App Router)
-- TypeScript
-- Tailwind CSS v4
-- Lucide React Icons
-
-### Backend
-- Node.js / Express
-- OpenAI API
-- PDF/CSV/Excel parsers
-- Multer for file uploads
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
 
@@ -38,84 +14,43 @@ git clone https://github.com/rafisalsabil/mutation-extractor.git
 cd mutation-extractor
 ```
 
-2. Install frontend dependencies:
+2. Install dependencies:
 ```bash
-cd web
 npm install
 ```
 
-3. Install backend dependencies:
+3. Set up environment variables:
+Create a `.env.local` file in the root directory:
 ```bash
-cd ../api
-npm install
-```
-
-4. Set up environment variables:
-```bash
-cd api
-cp .env.example .env
-# Edit .env and add your OPENAI_API_KEY
+OPENAI_API_KEY=your_key_here
+OPENAI_MODEL=gpt-4o-mini
 ```
 
 ### Running the Application
 
-1. Start the backend server:
+1. Start the development server:
 ```bash
-cd api
 npm run dev
 ```
 
-Backend runs at: `http://localhost:3002`
+App runs at: `http://localhost:3000`
 
-2. In a new terminal, start the frontend:
-```bash
-cd web
-npm run dev
-```
+## Deployment to Vercel
 
-Frontend runs at: `http://localhost:3000`
-
-3. Open your browser and navigate to `http://localhost:3000`
-
-## Usage
-
-1. **Upload**: Drag and drop or select a bank mutation file (PDF, CSV, or Excel)
-2. **Extract**: Click "Extract Mutation" to process the file
-3. **View**: See extracted transactions, statistics, and charts on the dashboard
-4. **Export**: Download the results as CSV for further analysis
+1. Push this repository to GitHub.
+2. Login to Vercel and "Add New Project".
+3. Import the `mutation-extractor` repository.
+4. **Environment Variables**: Add `OPENAI_API_KEY` in the Vercel project settings.
+5. Deploy!
 
 ## Project Structure
 
 ```
 mutation-extractor/
-├── api/                    # Backend API
-│   ├── services/          # File parsing and extraction logic
-│   ├── prompts/           # OpenAI prompt templates
-│   ├── server.js          # Express server
-│   └── package.json
-├── web/                    # Frontend Next.js app
-│   ├── app/               # Pages and layouts
-│   ├── components/        # Reusable UI components
-│   ├── lib/               # Utilities and API client
-│   └── package.json
-└── prompt/                 # Design specifications
+├── app/               # Next.js App Router
+│   ├── api/           # API Routes (Serverless)
+│   └── ...
+├── components/        # UI Components
+├── lib/               # Utilities & Server Services
+└── public/            # Static assets
 ```
-
-## Environment Variables
-
-### Backend (`api/.env`)
-- `OPENAI_API_KEY`: Your OpenAI API key
-- `PORT`: Server port (default: 3002)
-- `MAX_FILE_SIZE_MB`: Maximum file size in MB (default: 5)
-- `OPENAI_MODEL`: OpenAI model to use (default: gpt-4o-mini)
-
-### Frontend (`web/.env.local`)
-- `NEXT_PUBLIC_API_URL`: Backend API URL (default: http://localhost:3002)
-
-## License
-
-MIT
-
-## Author
-
-Built with ❤️ using Next.js, Express, and OpenAI

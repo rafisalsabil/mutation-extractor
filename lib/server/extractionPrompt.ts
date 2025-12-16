@@ -31,9 +31,7 @@ Here is the bank statement content to analyze:
 
 `;
 
-function buildExtractionPrompt(fileContent, fileName) {
+export function buildExtractionPrompt(fileContent: string, fileName: string): string {
     const contextHint = `\n[File name: ${fileName}]\n\n`;
     return EXTRACTION_PROMPT + contextHint + fileContent;
 }
-
-module.exports = { buildExtractionPrompt };
