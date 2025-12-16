@@ -2,10 +2,19 @@ import OpenAI from 'openai';
 import { buildExtractionPrompt } from './extractionPrompt';
 import { ExtractionResult, Transaction, BankStats } from '@/types';
 
-// Initialize OpenAI client
-// Note: This requires OPENAI_API_KEY env var to be set
-const openai = new OpenAI();
-const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
+// Lazy-initialize OpenAI client to avoid build-time errors
+let openai: OpenAI | null = null;
+
+function getOpenAIClient(): OpenAI {
+    if (!openai) {
+        openai = new OpenAI();
+    }
+    return openai;
+}
+
+function getOpenAIModel(): string {
+    return process.env.OPENAI_MODEL || 'gpt-4o-mini';
+}
 
 interface RawTransaction {
     amount: number;
@@ -32,8 +41,8 @@ export async function extractTransactions(fileContent: string, fileName: string)
     const prompt = buildExtractionPrompt(truncatedContent, fileName);
 
     try {
-        const response = await openai.chat.completions.create({
-            model: OPENAI_MODEL,
+        const response = await getOpenAIClient().chat.completions.create({
+            model: getOpenAIModel(),
             messages: [
                 {
                     role: 'system',

@@ -1,6 +1,5 @@
 import path from 'path';
-// @ts-ignore
-import pdfParse from 'pdf-parse';
+import { PDFParse } from 'pdf-parse';
 import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
 
@@ -31,8 +30,10 @@ export async function parseFileBuffer(buffer: Buffer, fileName: string, mimeType
  */
 async function parsePDF(buffer: Buffer): Promise<string> {
     try {
-        const data = await pdfParse(buffer);
-        return data.text;
+        const parser = new PDFParse({ data: buffer });
+        const result = await parser.getText();
+        await parser.destroy();
+        return result.text;
     } catch (error) {
         console.error('PDF parsing error:', error);
         throw new Error('Failed to parse PDF file');
