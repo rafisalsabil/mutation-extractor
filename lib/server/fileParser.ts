@@ -30,7 +30,9 @@ export async function parseFileBuffer(buffer: Buffer, fileName: string, mimeType
  */
 async function parsePDF(buffer: Buffer): Promise<string> {
     try {
-        const parser = new PDFParse({ data: buffer });
+        // Convert Buffer to Uint8Array for pdf-parse v2
+        const uint8Array = new Uint8Array(buffer);
+        const parser = new PDFParse({ data: uint8Array });
         const result = await parser.getText();
         await parser.destroy();
         return result.text;
