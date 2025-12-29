@@ -1,5 +1,4 @@
 import path from 'path';
-import { PDFParse } from 'pdf-parse';
 import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
 
@@ -26,16 +25,26 @@ export async function parseFileBuffer(buffer: Buffer, fileName: string, mimeType
 }
 
 /**
- * Extract text from PDF buffer
+ * Extract text from PDF buffer using pdf-parse v2
  */
 async function parsePDF(buffer: Buffer): Promise<string> {
     try {
-        // Convert Buffer to Uint8Array for pdf-parse v2
-        const uint8Array = new Uint8Array(buffer);
-        const parser = new PDFParse({ data: uint8Array });
-        const result = await parser.getText();
-        await parser.destroy();
-        return result.text;
+        // Dynamic import for pdf-parse to handle ESM/CJS compatibility
+        const pdfParse = await import('pdf-parse');
+        const PDFParser = pdfParse.PDFParse || pdfParse.default?.PDFParse || pdfParse.default;
+
+        if (typeof PDFParser === 'function') {
+            // pdf-parse v2 API with class
+            const uint8Array = new Uint8Array(buffer);
+            const parser = new PDFParser({ data: uint8Array });
+            const result = await parser.getText();
+            await parser.destroy();
+            return result.text;
+        } else {
+            // Fallback: try legacy pdf-parse API
+            const result = await pdfParse.default(buffer);
+            return result.text;
+        }
     } catch (error) {
         console.error('PDF parsing error:', error);
         throw new Error('Failed to parse PDF file');
